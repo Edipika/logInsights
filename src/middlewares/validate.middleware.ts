@@ -1,24 +1,33 @@
-import { Request, Response, NextFunction } from "express";
-import { LOG_LEVELS } from "../constants/logLevels";
+import { RequestHandler } from "express";
+import { ZodError, ZodType } from "zod";
 
-export function validateLog(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  const { service, level, message } = req.body;
+export const validateLog = (schema: ZodType): RequestHandler => {
+  return (req, res, next) => {
+    try {
+      req.body = schema.parse(req.body);
+      next();
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const formattedErrors: Record<string, string> = {};
 
-  if (!service || !level || !message) {
-    return res.status(400).json({
-      error: "service, level and message are required"
-    });
-  }
+        error.issues.forEach((issue) => {
+          const field = issue.path.join(".");
+          // show only first error per field
+          if (!formattedErrors[field]) {
+            formattedErrors[field] = issue.message;
+          }
+        });
 
-  if (!LOG_LEVELS.includes(level)) {
-    return res.status(400).json({
-      error: `Invalid log level: ${level}`
-    });
-  }
+        return res.status(422).json({
+          success: false,
+          message: "Validation failed",
+          errors: formattedErrors,
+          rawErrors: error.issues,
 
-  next();
-}
+        });
+      }
+
+      next(error);
+    }
+  };
+};

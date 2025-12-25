@@ -9,11 +9,11 @@ coverage/
 # =========================
 # Logs
 # =========================
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-*.log
+# npm-debug.log*
+# yarn-debug.log*
+# yarn-error.log*
+# pnpm-debug.log*
+# *.log
 
 # =========================
 # Environment variables
@@ -25,40 +25,40 @@ pnpm-debug.log*
 # =========================
 # TypeScript
 # =========================
-*.tsbuildinfo
+# *.tsbuildinfo
 
 # =========================
 # Runtime files
 # =========================
-*.pid
-*.seed
-*.pid.lock
+# *.pid
+# *.seed
+# *.pid.lock
 
 # =========================
 # OS / Editor
 # =========================
-.DS_Store
-Thumbs.db
+# .DS_Store
+# Thumbs.db
 
 # =========================
 # IDEs
 # =========================
-.vscode/
-!.vscode/extensions.json
-!.vscode/settings.json
+# .vscode/
+# !.vscode/extensions.json
+# !.vscode/settings.json
 
-.idea/
-*.swp
-*.swo
+# .idea/
+# *.swp
+# *.swo
 
 # =========================
 # Testing
 # =========================
-.nyc_output/
+# .nyc_output/
 
 # =========================
 # Misc
 # =========================
-.cache/
-.temp/
-tmp/
+# .cache/
+# .temp/
+# tmp/

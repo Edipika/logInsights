@@ -1,6 +1,5 @@
 import express from "express";
-import logRoutes from "./routes/log.routes";
-// import logRoutes from "./routes/log.routes";
+import logs from "./ingestion/ingestion.routes";
 
 const app = express();
 
@@ -11,6 +10,6 @@ app.get("/",(req,res)=>{
         message:"server is running.."
     });
 })
-app.use("/api", logRoutes); 
+app.use("/api", logs); 
 
 export default app;

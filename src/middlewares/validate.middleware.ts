@@ -31,3 +31,11 @@ export const validateLog = (schema: ZodType): RequestHandler => {
     }
   };
 };
+
+
+/**zod patterns
+ * Required = string()
+ * Required + non-empty=z.string().min(1, "service is required")
+ * Optional but if present must be non-empty=service: z.string().min(1).optional()
+ * Nullable message =string().min(1).nullable()
+*/

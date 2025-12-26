@@ -10,3 +10,4 @@ export async  function ingestLog(req:Request,res:Response){
     });
 
 }
+ 

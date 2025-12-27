@@ -1,11 +1,5 @@
 import { esClient } from "../config/elasticsearch";
-export type LogLevel = "warn" | "error" | "info" | "fatal";
-
-export interface CreateLogDTO {
-    service: string;
-    level: LogLevel;
-    message: string;
-}
+import { CreateLogDTO, SearchLogDTO } from "./ingestion.types";
 
 export async function createLog(data: CreateLogDTO) {
     const log = {
@@ -18,40 +12,56 @@ export async function createLog(data: CreateLogDTO) {
         index: "logs",
         document: log
     });
-    
+
     return log;
 }
 
-export async function searchLog(data: CreateLogDTO) {
-// 2.5.1 Create GET /api/logs
-// app.get("/api/logs", async (req, res) => {
-//   try {
-//     const { service, level } = req.query;
+export async function searchLogs(data: SearchLogDTO) {
 
-//     const must: any[] = [];
+    const { service, level, message, page = 1, limit = 10,from,to} = data;
 
-//     if (service) {
-//       must.push({ term: { service } });
-//     }
+    const must: any[] = [];
 
-//     if (level) {
-//       must.push({ term: { level } });
-//     }
+    if (service) {
+        must.push({ term: { service } });
+    }
 
-//     const result = await esClient.search({
-//       index: "logs",
-//       query: {
-//         bool: { must }
-//       }
-//     });
+    if (level) {
+        must.push({ term: { level } });
+    }
+    if (message) {
+        must.push({
+            multi_match: {
+                query: message,
+                fields: ["message^3", "service"],//3× importance rank higher if matched
+                operator: "and"
+            }
+        });
+    }
 
-//     const logs = result.hits.hits.map((hit) => hit._source);
+    if (from || to) {
+        must.push({
+            range: {
+                timestamp: {
+                    gte: from,
+                    lte: to
+                }
+            }
+        });
+    }
 
-//     res.json(logs);
-//   } catch (error) {
-//     console.error("Search error:", error);
-//     res.status(500).json({ error: "Failed to fetch logs" });
-//   }
-// });
+    const result = await esClient.search({
+        index: "logs",
+        from: (page - 1) * limit, //for pagination
+        size: limit,
+        query: {
+            bool: { must } //bool is a Boolean query container means:all conditions must match
+        },
+        sort: [
+            { timestamp: "desc" }
+        ]
+    });
 
+    return result.hits.hits.map(hit => hit._source);
 }
+

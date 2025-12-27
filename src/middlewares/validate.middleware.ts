@@ -4,7 +4,7 @@ import { ZodError, ZodType } from "zod";
 export const validateLog = (schema: ZodType): RequestHandler => {
   return (req, res, next) => {
     try {
-      req.body = schema.parse(req.body);
+      schema.parse(req.method === "GET" ? req.query : req.body);
       next();
     } catch (error) {
       if (error instanceof ZodError) {

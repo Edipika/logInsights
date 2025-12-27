@@ -7,7 +7,7 @@
     "dev": "nodemon --exec ts-node src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "es:create": "ts-node src/elastic/createIndices.ts",
+    "es:create": "ts-node src/elastic/createIndices.ts", 
     "es:delete": "ts-node src/elastic/deleteIndices.ts"
   },
   "keywords": [],

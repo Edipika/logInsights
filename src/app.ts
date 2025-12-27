@@ -10,6 +10,6 @@ app.get("/",(req,res)=>{
         message:"server is running.."
     });
 })
-app.use("/api", logs); 
+app.use("/log", logs); 
 
 export default app;

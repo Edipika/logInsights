@@ -1,5 +1,6 @@
 import { esClient } from "../config/elasticsearch";
 import { CreateLogDTO, SearchLogDTO } from "./ingestion.types";
+import { publishLog } from "../messaging/producers/log.producers";
 
 export async function createLog(data: CreateLogDTO) {
     const log = {
@@ -8,17 +9,21 @@ export async function createLog(data: CreateLogDTO) {
     };
     console.log(log);
 
-    await esClient.index({ // POST http://localhost:9200/logs/_doc
-        index: "logs",
-        document: log
-    });
+    await publishLog(log);
 
-    return log;
+    return { status: "queued" };
+
+    // await esClient.index({ // POST http://localhost:9200/logs/_doc
+    //     index: "logs",
+    //     document: log
+    // });
+
+    // return log;
 }
 
 export async function searchLogs(data: SearchLogDTO) {
 
-    const { service, level, message, page = 1, limit = 10,from,to} = data;
+    const { service, level, message, page = 1, limit = 10, from, to } = data;
 
     const must: any[] = [];
 

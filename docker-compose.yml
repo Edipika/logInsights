@@ -36,8 +36,9 @@ services:
       - "9092:9092"
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181 #Connect Kafka → Zookeeper
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092 #How clients discover broker
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181 
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092  #Kafka listens on listeners but advertises a client-reachable address via advertised.listeners
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092 #address Kafka gives to clients (example node)
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1 #1 because single broker/instance of kafka
 
 volumes:

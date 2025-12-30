@@ -1,6 +1,8 @@
 import express from "express";
 import logs from "./ingestion/ingestion.routes";
-import { connectProducer } from "./producers/kafka.producer";
+import { logProducer } from "./messaging/producers/log.producers";
+// log-consumer/src/index.ts
+import { startLogConsumer } from "./messaging/consumers/log.consumers";
 
 const app = express();
 
@@ -11,9 +13,24 @@ app.get("/", (req, res) => {
         message: "server is running.."
     });
 })
-connectProducer().then(() => {
-    console.log("Kafka producer connected");
-});
+
+export async function connectProducer() {
+  await logProducer.connect();
+} //Open network connection for producer
+
+
+async function bootstrap() {
+  try {
+    await startLogConsumer();
+    console.log("Kafka log consumer started");
+  } catch (error) {
+    console.error("Failed to start consumer", error);
+    process.exit(1);
+  }
+}
+
+bootstrap();
+
 
 app.use("/log", logs);
 

@@ -19,12 +19,22 @@ export async function startLogConsumer() {
 
       const log = JSON.parse(message.value.toString());
 
-      await esClient.index({
-        index: "logs",
-        document: log,
-      });
-
+      try {
+        await esClient.index({
+          index: "logs",
+          document: log,
+        });
+      } catch (err) {
+        console.error("Failed to index log", err);
+      }
       console.log("Stored log:", log.service);
     },
   });
 }
+
+
+process.on("SIGINT", async () => {
+  console.log("SIGINT received. Disconnecting consumer...");
+  await consumer.disconnect();
+  process.exit(0);
+});

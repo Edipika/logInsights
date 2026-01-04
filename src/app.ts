@@ -1,7 +1,6 @@
 import express from "express";
 import logs from "./ingestion/ingestion.routes";
 import { logProducer } from "./messaging/producers/log.producers";
-// log-consumer/src/index.ts
 import { startLogConsumer } from "./messaging/consumers/log.consumers";
 
 const app = express();

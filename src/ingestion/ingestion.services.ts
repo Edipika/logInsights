@@ -7,7 +7,7 @@ export async function createLog(data: CreateLogDTO) {
         ...data,
         timestamp: new Date().toISOString()
     };
-    console.log(log);
+    console.log("Incoming Log",log);
 
     await publishLog(log);
 

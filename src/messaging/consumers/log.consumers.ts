@@ -3,6 +3,7 @@ import { esClient } from "../../config/elasticsearch";
 
 const consumer = kafka.consumer({
   groupId: "logs-group",
+    sessionTimeout: 30000,
 });
 
 export async function startLogConsumer() {
@@ -17,19 +18,29 @@ export async function startLogConsumer() {
     eachMessage: async ({ message }) => {
       if (!message.value) return;
 
-      const log = JSON.parse(message.value.toString());
+      let log;
+
+      try {
+        log = JSON.parse(message.value.toString());
+      } catch (err) {
+        console.error("Invalid log format", err);
+        return;
+      }
 
       try {
         await esClient.index({
           index: "logs",
           document: log,
         });
+
+        console.log("Stored log:", log.service);
       } catch (err) {
-        console.error("Failed to index log", err);
+        console.error("ElasticSearch indexing failed", err);
+        // future: send to DLQ topic
       }
-      console.log("Stored log:", log.service);
     },
   });
+
 }
 
 

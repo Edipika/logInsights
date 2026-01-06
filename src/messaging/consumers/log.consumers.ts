@@ -1,9 +1,22 @@
 import { kafka } from "../../config/kafka";
 import { esClient } from "../../config/elasticsearch";
 
+// Error count per service per minute
+// Example key: auth-service_2026-01-06T10:02
+const errorMetrics = new Map<string, number>();
+
+const ERROR_THRESHOLD = 10;
+
+function getMinuteBucket(timestamp: string | number | Date) {
+  const date = new Date(timestamp);
+  date.setSeconds(0, 0); // round to minute
+  return date.toISOString();
+}
+
+
 const consumer = kafka.consumer({
   groupId: "logs-group",
-    sessionTimeout: 30000,
+  sessionTimeout: 30000,
 });
 
 export async function startLogConsumer() {
@@ -26,7 +39,6 @@ export async function startLogConsumer() {
         console.error("Invalid log format", err);
         return;
       }
-
       try {
         await esClient.index({
           index: "logs",
@@ -37,6 +49,25 @@ export async function startLogConsumer() {
       } catch (err) {
         console.error("ElasticSearch indexing failed", err);
         // future: send to DLQ topic
+      }
+      if (log.level === "error") {
+        const minuteBucket = getMinuteBucket(log.timestamp || Date.now());
+        const key = `${log.service}_${minuteBucket}`;
+
+        const currentCount = errorMetrics.get(key) || 0;
+        const newCount = currentCount + 1;
+
+        errorMetrics.set(key, newCount);
+
+        console.log(
+          `[ERROR_METRIC] ${log.service} → ${newCount} errors @ ${minuteBucket}`
+        );
+        if (newCount === ERROR_THRESHOLD + 1) {
+          console.error(
+            `🚨 ALERT: ${log.service} crossed ${ERROR_THRESHOLD} errors/min`
+          );
+        }
+
       }
     },
   });

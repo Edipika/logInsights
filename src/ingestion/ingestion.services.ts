@@ -12,13 +12,6 @@ export async function createLog(data: CreateLogDTO) {
     await publishLog(log);
 
     return { status: "queued" };
-
-    // await esClient.index({ // POST http://localhost:9200/logs/_doc
-    //     index: "logs",
-    //     document: log
-    // });
-
-    // return log;
 }
 
 export async function searchLogs(data: SearchLogDTO) {

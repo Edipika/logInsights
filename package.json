@@ -23,6 +23,7 @@
     "@elastic/elasticsearch": "^8.19.1",
     "express": "^5.2.1",
     "kafkajs": "^2.2.4",
+    "openai": "^6.16.0",
     "zod": "^4.2.1"
   }
 }

@@ -1,13 +1,15 @@
 import { esClient } from "../config/elasticsearch";
 import { CreateLogDTO, SearchLogDTO } from "./ingestion.types";
 import { publishLog } from "../messaging/producers/log.producers";
+import { LogDocument } from '../ingestion/ingestion.types';
+import { AiErrorAnalysis } from '../ai/ai.types';
 
 export async function createLog(data: CreateLogDTO) {
     const log = {
         ...data,
         timestamp: new Date().toISOString()
     };
-    console.log("Incoming Log",log);
+    console.log("Incoming Log", log);
 
     await publishLog(log);
 
@@ -63,3 +65,44 @@ export async function searchLogs(data: SearchLogDTO) {
     return result.hits.hits.map(hit => hit._source);
 }
 
+export async function fetchSimilarErrors(
+    service: string,
+    message: string,
+    limit = 30
+): Promise<LogDocument[]> {
+    const { hits } = await esClient.search({
+        index: 'logs-*',
+        size: limit,
+        query: {
+            bool: {
+                must: [
+                    { match: { service } },
+                    { match: { level: 'error' } },
+                    { match: { message } },
+                ],
+            },
+        },
+        sort: [{ timestamp: 'desc' }],
+    });
+
+    return hits.hits.map((hit: any) => hit._source);
+}
+
+
+export async function storeAiAnalysis(
+  service: string,
+  signature: string,
+  analysis: AiErrorAnalysis
+) {
+  await esClient.index({
+    index: 'ai-error-summaries',
+    document: {
+      service,
+      error_signature: signature,
+      summary: analysis.summary,
+      root_cause: analysis.root_cause,
+      suggested_fix: analysis.suggested_fix,
+      created_at: new Date().toISOString(),
+    },
+  });
+}

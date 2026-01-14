@@ -1,5 +1,7 @@
 import { kafka } from "../../config/kafka";
 import { esClient } from "../../config/elasticsearch";
+import { fetchSimilarErrors, storeAiAnalysis } from '../../ingestion/ingestion.services';
+import { analyzeErrorsWithAI } from '../../ai/ai.service';
 
 // Error count per service per minute
 // Example key: auth-service_2026-01-06T10:02
@@ -68,10 +70,33 @@ export async function startLogConsumer() {
           );
         }
 
+         try {
+          await handleErrorLog(log);
+        } catch (err) {
+          console.error("AI error analysis failed", err);
+        }
+
       }
     },
   });
 
+}
+
+export async function handleErrorLog(log: any) {
+  const { service, message, level } = log;
+  if (level !== 'error') return;
+
+  // 1. Fetch similar errors
+  const samples = await fetchSimilarErrors(service, message);
+
+  // 2. Avoid AI if insufficient data
+  if (samples.length < 5) return;
+
+  // 3. Call AI
+  const analysis = await analyzeErrorsWithAI(samples);
+
+  // 4. Store result
+  await storeAiAnalysis(service, message, analysis);
 }
 
 

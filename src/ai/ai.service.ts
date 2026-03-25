@@ -3,12 +3,21 @@ import { AiErrorAnalysis } from './ai.types';
 import { buildErrorPrompt } from './ai.prompt';
 import { LogDocument } from '../ingestion/ingestion.types';
 
-const client = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY!,
-});
-
-
+// const client = new OpenAI({
+//     apiKey: process.env.OPENAI_API_KEY!,
+// });
 const USE_MOCK_AI = process.env.USE_MOCK_AI === 'true';
+
+let client: OpenAI | null = null;
+
+function getClient(): OpenAI {
+    if (!client) {
+        client = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY!,
+        });
+    }
+    return client;
+}
 
 export async function analyzeErrorsWithAI(
     logs: LogDocument[]
@@ -27,7 +36,7 @@ export async function analyzeErrorsWithAI(
 
     const prompt = buildErrorPrompt(logs);
 
-    const response = await client.chat.completions.create({
+    const response = await getClient().chat.completions.create({
         model: 'gpt-4o-mini', // cost-effective + reliable
         temperature: 0.2,     // deterministic answers
         messages: [{ role: 'user', content: prompt }],

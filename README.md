@@ -8,11 +8,11 @@ LogInsight is a scalable, event-driven log ingestion and analysis platform built
 
 ## Features
 
-- ⚡ **Async Log Ingestion** — Kafka-based pipeline for non-blocking, high-throughput log processing
-- 🔍 **Powerful Search** — Full-text and filtered log search via Elasticsearch
-- 🚨 **Real-Time Alerting** — Auto-triggers alerts when error rates exceed thresholds (e.g. >10 errors/min per service)
-- 🤖 **AI Error Analysis** — Automatically summarizes errors, identifies root causes, and suggests fixes
-- 📦 **Decoupled Architecture** — Producer/consumer separation ensures fault tolerance and independent scaling
+-  **Async Log Ingestion** — Kafka-based pipeline for non-blocking, high-throughput log processing
+-  **Powerful Search** — Full-text and filtered log search via Elasticsearch
+-  **Real-Time Alerting** — Auto-triggers alerts when error rates exceed thresholds (e.g. >10 errors/min per service)
+- **AI Error Analysis** — Automatically summarizes errors, identifies root causes, and suggests fixes
+- **Decoupled Architecture** — Producer/consumer separation ensures fault tolerance and independent scaling
 
 ---
 

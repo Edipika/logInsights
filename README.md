@@ -55,7 +55,9 @@ Consumer Worker
 Make sure you have the following running locally or via Docker:
 - Node.js (v18+)
 - Apache Kafka
-- Elasticsearch
+- Apache ZooKeeper (required for Kafka)
+- Elasticsearch 
+- Kibana (Optional)
 
 ### 1. Clone the repository
 

@@ -4,6 +4,10 @@ export const LogSchema = z.object({
     service: z.string().min(1, "service is required"),
     level: z.enum(["warn", "error", "info", "fatal"]),
     message: z.string().min(1, "message is required"),
+    project: z.string().min(1, "project is required"),
+    environment: z.string().min(1, "environment is required"),
+    timestamp: z.string().datetime(), // ISO format
+    userId: z.string().optional()
 });
 
 export const SearchSchema = z.object({

@@ -1,5 +1,5 @@
 import { kafka } from "../../config/kafka";
-import {LogEvent} from "../log.schema";
+import { LogEvent } from "../log.schema";
 
 export const logProducer = kafka.producer({
   allowAutoTopicCreation: false,
@@ -14,6 +14,7 @@ export async function publishLog(logs: LogEvent) {
     await logProducer.send({
       topic: "logs-stream",
       messages: batch.map(log => ({
+        key: log.project,
         value: JSON.stringify(log),
       })),
     });

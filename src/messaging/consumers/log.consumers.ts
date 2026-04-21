@@ -14,7 +14,11 @@ function getMinuteBucket(timestamp: string | number | Date) {
   date.setSeconds(0, 0); // round to minute
   return date.toISOString();
 }
+// When logs-group subscribes to logs-stream, it’s telling Kafka: "I am responsible for reading all the data in this topic." Kafka then looks at how many Partitions are in that topic and how many Consumers (instances of your app) are in that group. It performs an Assignment:
 
+// If the topic has 3 partitions and you have 1 consumer, that 1 consumer is "assigned" to watch all 3 partitions. It will receive all messages from all partitions.
+
+// If you scale up to 2 consumers in the same group, Kafka will reassign partitions so that each consumer gets a subset. For example, Consumer A might get Partitions 0 and 1, while Consumer B gets Partition 2. Now each consumer only processes a portion of the messages.
 
 const consumer = kafka.consumer({
   groupId: "logs-group",
@@ -43,7 +47,7 @@ export async function startLogConsumer() {
       }
       try {
         await esClient.index({
-          index: "logs",
+          index: `logs-${log.project}-${log.environment}`,
           document: log,
         });
 
@@ -70,7 +74,7 @@ export async function startLogConsumer() {
           );
         }
 
-         try {
+        try {
           await handleErrorLog(log);
         } catch (err) {
           console.error("AI error analysis failed", err);

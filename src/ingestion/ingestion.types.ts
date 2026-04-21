@@ -1,19 +1,23 @@
 export type LogLevel = "warn" | "error" | "info" | "fatal";
 
 export interface CreateLogDTO {
-    service: string;
-    level: LogLevel;
-    message: string;
+  project: string;
+  service: string;
+  environment: string;
+  level: LogLevel;
+  message: string;
+  timestamp: string; // ISO format
+  userId?: string;
 }
 
 export interface SearchLogDTO {
-    service?: string;
-    level?: LogLevel;
-    message?: string;
-    page?: number; //for pagination 
-    limit?: number;
-    from?: string;
-    to?: string;
+  service?: string;
+  level?: LogLevel;
+  message?: string;
+  page?: number; //for pagination 
+  limit?: number;
+  from?: string;
+  to?: string;
 }
 
 /**

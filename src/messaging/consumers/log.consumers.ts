@@ -2,12 +2,13 @@ import { kafka } from "../../config/kafka";
 import { esClient } from "../../config/elasticsearch";
 import { fetchSimilarErrors, storeAiAnalysis } from '../../ingestion/ingestion.services';
 import { analyzeErrorsWithAI } from '../../ai/ai.service';
+import { sendSlackAlert } from "../../alerts/slack.alert";
 
 // Error count per service per minute
 // Example key: auth-service_2026-01-06T10:02
 const errorMetrics = new Map<string, number>();
 
-const ERROR_THRESHOLD = 10;
+const ERROR_THRESHOLD = 5;
 
 function getMinuteBucket(timestamp: string | number | Date) {
   const date = new Date(timestamp);
@@ -32,6 +33,8 @@ export async function startLogConsumer() {
     topic: "logs-stream",
     fromBeginning: false,
   });
+  const alertCooldowns = new Map<string, number>(); // key → last alert timestamp (ms)
+  const ALERT_COOLDOWN_MS = 5 * 60 * 1000;
 
   await consumer.run({
     eachMessage: async ({ message }) => {
@@ -56,9 +59,10 @@ export async function startLogConsumer() {
         console.error("ElasticSearch indexing failed", err);
         // future: send to DLQ topic
       }
+
       if (log.level === "error") {
         const minuteBucket = getMinuteBucket(log.timestamp || Date.now());
-        const key = `${log.service}_${minuteBucket}`;
+        const key = `${log.project}_${log.service}_${minuteBucket}`;
 
         const currentCount = errorMetrics.get(key) || 0;
         const newCount = currentCount + 1;
@@ -68,10 +72,48 @@ export async function startLogConsumer() {
         console.log(
           `[ERROR_METRIC] ${log.service} → ${newCount} errors @ ${minuteBucket}`
         );
-        if (newCount === ERROR_THRESHOLD + 1) {
-          console.error(
-            `🚨 ALERT: ${log.service} crossed ${ERROR_THRESHOLD} errors/min`
+        if (newCount > ERROR_THRESHOLD) {
+          console.warn(
+            `[ALERT_TRIGGER] service=${log.service} count=${newCount} threshold=${ERROR_THRESHOLD}`
           );
+          const cooldownKey = `${log.project}_${log.environment}_${log.service}`;
+          const lastAlerted = alertCooldowns.get(cooldownKey) ?? 0;
+          const now = Date.now();
+          console.debug(
+            `[ALERT_DEBUG] key=${cooldownKey} lastAlerted=${lastAlerted} now=${now} cooldown=${ALERT_COOLDOWN_MS}`
+          );
+
+          if (now - lastAlerted > ALERT_COOLDOWN_MS) {
+            alertCooldowns.set(cooldownKey, now);
+            console.info(
+              `[ALERT_SENDING] Sending Slack alert for ${log.service} (${newCount} errors)`
+            );
+
+            // Fire-and-forget — don't block message processing
+            sendSlackAlert({
+              project: log.project,
+              environment: log.environment,
+              service: log.service,
+              errorCount: newCount,
+              threshold: ERROR_THRESHOLD,
+              minuteBucket,
+              sampleMessage: log.message,
+            }).then(() => {
+              console.info(
+                `[ALERT_SUCCESS] Slack alert sent for ${log.service}`
+              );
+            })
+              .catch(err => {
+                console.error(
+                  `[ALERT_FAILED] Slack alert failed for ${log.service}`,
+                  err
+                );
+              });
+          } else {
+            console.debug(
+              `[ALERT_SKIPPED] Cooldown active for ${log.service}. Remaining=${ALERT_COOLDOWN_MS}ms`
+            );
+          }
         }
 
         try {
@@ -91,7 +133,7 @@ export async function handleErrorLog(log: any) {
   if (level !== 'error') return;
 
   // 1. Fetch similar errors
-  const samples = await fetchSimilarErrors(service, message);
+  const samples = await fetchSimilarErrors(service, message);//batching
 
   // 2. Avoid AI if insufficient data
   if (samples.length < 5) return;

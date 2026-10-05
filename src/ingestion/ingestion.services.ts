@@ -3,6 +3,7 @@ import { CreateLogDTO, SearchLogDTO } from "./ingestion.types";
 import { publishLog } from "../messaging/producers/log.producers";
 import { LogDocument } from '../ingestion/ingestion.types';
 import { AiErrorAnalysis } from '../ai/ai.types';
+import { logSearchPattern } from "../elastic/indexNames";
 
 export async function createLog(data: CreateLogDTO) {
     const log = {
@@ -18,16 +19,26 @@ export async function createLog(data: CreateLogDTO) {
 
 export async function searchLogs(data: SearchLogDTO) {
 
-    const { service, level, message, page = 1, limit = 10, from, to } = data;
+    const { project, environment, service, level, message, page = 1, limit = 10, from, to } = data;
 
-    const must: any[] = [];
+    const must: any[] = [];   // scored (full-text)
+    const filter: any[] = []; // exact match, not scored, cacheable
+
+    // index pattern alone is ambiguous (logs-hrms-* also matches project "hrms-x"), so filter exactly too
+    if (project) {
+        filter.push({ term: { project } });
+    }
+
+    if (environment) {
+        filter.push({ term: { environment } });
+    }
 
     if (service) {
-        must.push({ term: { service } });
+        filter.push({ term: { service } });
     }
 
     if (level) {
-        must.push({ term: { level } });
+        filter.push({ term: { level } });
     }
     if (message) {
         must.push({
@@ -40,7 +51,7 @@ export async function searchLogs(data: SearchLogDTO) {
     }
 
     if (from || to) {
-        must.push({
+        filter.push({
             range: {
                 timestamp: {
                     gte: from,
@@ -51,11 +62,13 @@ export async function searchLogs(data: SearchLogDTO) {
     }
 
     const result = await esClient.search({
-        index: "logs",
+        index: logSearchPattern(project, environment),
+        ignore_unavailable: true, // unknown project/env → empty result instead of 404
+        allow_no_indices: true,
         from: (page - 1) * limit, //for pagination
         size: limit,
         query: {
-            bool: { must } //bool is a Boolean query container means:all conditions must match
+            bool: { must, filter } //bool is a Boolean query container means:all conditions must match
         },
         sort: [
             { timestamp: "desc" }

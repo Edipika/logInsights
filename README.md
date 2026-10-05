@@ -87,7 +87,17 @@ ELASTICSEARCH_URL=http://localhost:9200
 docker-compose up -d
 ```
 
-### 5. Run the development server
+### 5. Install the Elasticsearch index template
+
+Logs are stored in one index per project and environment (`logs-<project>-<environment>`), created automatically on first write. This registers the `logs-template` template so those indices get the correct field mappings:
+
+```bash
+npm run es:create
+```
+
+> The template only applies to indices created after it exists. If `logs-*` indices were created before, run `npm run es:delete` first (this deletes the log data).
+
+### 6. Run the development server
 
 ```bash
 npm run dev
@@ -128,14 +138,16 @@ npm run dev
 
 ---
 
-### GET `/logs/search` — Search logs
+### GET `/log/search` — Search logs
 
-Supports filtering by `service`, `level`, full-text `message` search, time range, pagination, and sorting (latest first).
+Searches across all `logs-<project>-<environment>` indices. Supports filtering by `project`, `environment`, `service`, `level`, full-text `message` search, time range (`from` / `to`, ISO), pagination, and sorting (latest first).
+
+Passing `project` (and `environment`) narrows the search to that project's indices. An unknown project/environment returns an empty list.
 
 **Example query params:**
 
 ```
-GET /logs/search?service=auth-service&level=error&page=1&limit=20
+GET /log/search?project=hrms&environment=production&service=auth-service&level=error&page=1&limit=20
 ```
 
 ---

@@ -3,6 +3,7 @@ import { esClient } from "../../config/elasticsearch";
 import { fetchSimilarErrors, storeAiAnalysis } from '../../ingestion/ingestion.services';
 import { analyzeErrorsWithAI } from '../../ai/ai.service';
 import { sendSlackAlert } from "../../alerts/slack.alert";
+import { logIndexName } from "../../elastic/indexNames";
 
 // Error count per service per minute
 // Example key: auth-service_2026-01-06T10:02
@@ -50,7 +51,7 @@ export async function startLogConsumer() {
       }
       try {
         await esClient.index({
-          index: `logs-${log.project}-${log.environment}`,
+          index: logIndexName(log.project, log.environment),
           document: log,
         });
 

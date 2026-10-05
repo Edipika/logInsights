@@ -1,32 +1,16 @@
 import { esClient } from "../config/elasticsearch";
-import logsIndex from "./indices/logs.index.json";
+import { LOGS_TEMPLATE_NAME } from "./indexNames";
+import logsTemplate from "./templates/logs.template.json";
 
-type IndexConfig = {
-  name: string;
-  body: any;
-};
-
-const indices: IndexConfig[] = [
-  { name: "logs", body: logsIndex },
-];
-
+// Logs are partitioned into logs-<project>-<environment> indices that are created
+// on first write, so we register a template instead of creating indices up front.
 async function createIndices() {
-  for (const index of indices) {
-    const exists = await esClient.indices.exists({
-      index: index.name,
-    });
+  await esClient.indices.putIndexTemplate({ //PUT http://localhost:9200/_index_template/logs-template
+    name: LOGS_TEMPLATE_NAME,
+    ...(logsTemplate as any),
+  });
 
-    if (!exists) {
-      await esClient.indices.create({ //PUT http://localhost:9200/logs
-        index: index.name,
-        body: index.body,
-      });
-
-      console.log(`✅ Created index: ${index.name}`);
-    } else {
-      console.log(`⚠️ Index already exists: ${index.name}`);
-    }
-  }
+  console.log(`✅ Index template ready: ${LOGS_TEMPLATE_NAME} → ${logsTemplate.index_patterns.join(", ")}`);
 }
 
 createIndices()

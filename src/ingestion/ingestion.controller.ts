@@ -16,6 +16,8 @@ export async function searchLog(req: Request, res: Response) {
         const data = req.query as any;
 
         const logs = await searchLogs({
+            project: data.project as string,
+            environment: data.environment as string,
             service: data.service as string,
             level: data.level as any,
             message: data.message as string,

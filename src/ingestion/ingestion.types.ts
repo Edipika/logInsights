@@ -11,6 +11,8 @@ export interface CreateLogDTO {
 }
 
 export interface SearchLogDTO {
+  project?: string;
+  environment?: string;
   service?: string;
   level?: LogLevel;
   message?: string;

@@ -11,6 +11,8 @@ export const LogSchema = z.object({
 });
 
 export const SearchSchema = z.object({
+    project: z.string().min(1, "project has nothing to search").optional(),
+    environment: z.string().min(1, "environment has nothing to search").optional(),
     service: z.string().min(1, "service has nothing to search").optional(),
     level: z.enum(["warn", "error", "info", "fatal"]).optional(),
     message: z.string().min(1, "message has nothing to search").optional(),

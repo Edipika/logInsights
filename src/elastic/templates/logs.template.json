@@ -1,6 +1,7 @@
 {
-  "index_patterns": ["logs-*"],
-  "priority": 100,
+  "index_patterns": ["logs-*-*"],
+  "priority": 200,
+  "data_stream": {},
   "template": {
     "settings": {
       "number_of_shards": 1,
@@ -8,12 +9,13 @@
     },
     "mappings": {
       "properties": {
+        "@timestamp": { "type": "date" },
+        "timestamp": { "type": "date" },
         "project": { "type": "keyword" },
         "environment": { "type": "keyword" },
         "service": { "type": "keyword" },
         "level": { "type": "keyword" },
         "message": { "type": "text" },
-        "timestamp": { "type": "date" },
         "userId": { "type": "keyword" }
       }
     }

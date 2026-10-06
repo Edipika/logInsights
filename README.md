@@ -74,11 +74,10 @@ npm install
 
 ### 3. Configure environment variables
 
-Create a `.env` file in the root directory:
+Copy the example file and adjust values as needed (see [Environment Variables](#environment-variables)):
 
-```env
-KAFKA_BROKER=localhost:9092
-ELASTICSEARCH_URL=http://localhost:9200
+```bash
+cp .env.example .env
 ```
 
 ### 4. Start infrastructure (optional — Docker)
@@ -87,17 +86,26 @@ ELASTICSEARCH_URL=http://localhost:9200
 docker-compose up -d
 ```
 
-### 5. Install the Elasticsearch index template
+### 5. Set up Elasticsearch log storage
 
-Logs are stored in one index per project and environment (`logs-<project>-<environment>`), created automatically on first write. This registers the `logs-template` template so those indices get the correct field mappings:
+Logs are stored in one **data stream** per project and environment (`logs-<project>-<environment>`), created automatically on first write. This installs:
+
+- the `logs-retention` lifecycle policy: a new backing index every day, deleted after `LOG_RETENTION_DAYS` (default 30)
+- the `logs-template` index template: field mappings for `logs-*-*` data streams, using the policy above
 
 ```bash
 npm run es:create
 ```
 
-> The template only applies to indices created after it exists. If `logs-*` indices were created before, run `npm run es:delete` first (this deletes the log data).
+> The template only applies to data streams created after it exists. If `logs-*` data streams or indices were created before, run `npm run es:delete` first (this deletes the log data).
 
-### 6. Run the development server
+### 6. Create the Kafka topic
+
+```bash
+docker exec kafka kafka-topics --create --topic logs-stream --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
+```
+
+### 7. Run the development server
 
 ```bash
 npm run dev
@@ -107,10 +115,21 @@ npm run dev
 
 ## Environment Variables
 
-| Variable            | Description                        | Default                     |
-|---------------------|------------------------------------|-----------------------------|
-| `KAFKA_BROKER`      | Kafka broker address               | `localhost:9092`            |
-| `ELASTICSEARCH_NODE` | Elasticsearch connection URL       | `http://localhost:9200`     |
+Empty or missing values fall back to the defaults below.
+
+| Variable | Description | Default |
+|---|---|---|
+| `PORT` | HTTP port of the API | `3000` |
+| `KAFKA_BROKER` | Kafka broker address(es), comma-separated | `localhost:9092` |
+| `KAFKA_CLIENT_ID` | Kafka client id | `log-insights` |
+| `KAFKA_TOPIC` | Topic logs are published to and consumed from | `logs-stream` |
+| `KAFKA_GROUP_ID` | Consumer group id | `logs-group` |
+| `ELASTICSEARCH_NODE` | Elasticsearch connection URL | `http://localhost:9200` |
+| `LOG_RETENTION_DAYS` | Days before old logs are deleted (applied by `npm run es:create`) | `30` |
+| `OPENAI_API_KEY` | OpenAI key for AI error analysis | — |
+| `USE_MOCK_AI` | `true` returns a canned AI analysis instead of calling OpenAI | `false` |
+| `SLACK_WEBHOOK_HRMS_PROD` | Slack webhook for `hrms` / `production` alerts | — |
+| `SLACK_WEBHOOK_DEFAULT` | Fallback Slack webhook for all other alerts | — |
 
 ---
 

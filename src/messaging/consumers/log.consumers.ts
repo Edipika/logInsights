@@ -4,6 +4,7 @@ import { fetchSimilarErrors, storeAiAnalysis } from '../../ingestion/ingestion.s
 import { analyzeErrorsWithAI } from '../../ai/ai.service';
 import { sendSlackAlert } from "../../alerts/slack.alert";
 import { logIndexName } from "../../elastic/indexNames";
+import { env } from "../../config/env";
 
 // Error count per service per minute
 // Example key: auth-service_2026-01-06T10:02
@@ -23,7 +24,7 @@ function getMinuteBucket(timestamp: string | number | Date) {
 // If you scale up to 2 consumers in the same group, Kafka will reassign partitions so that each consumer gets a subset. For example, Consumer A might get Partitions 0 and 1, while Consumer B gets Partition 2. Now each consumer only processes a portion of the messages.
 
 const consumer = kafka.consumer({
-  groupId: "logs-group",
+  groupId: env.kafka.groupId,
   sessionTimeout: 30000,
 });
 
@@ -31,7 +32,7 @@ export async function startLogConsumer() {
   await consumer.connect();
 
   await consumer.subscribe({
-    topic: "logs-stream",
+    topic: env.kafka.topic,
     fromBeginning: false,
   });
   const alertCooldowns = new Map<string, number>(); // key → last alert timestamp (ms)
@@ -51,8 +52,12 @@ export async function startLogConsumer() {
       }
       try {
         await esClient.index({
-          index: logIndexName(log.project, log.environment),
-          document: log,
+          index: logIndexName(log.project, log.environment), // data stream, created on first write
+          op_type: "create", // data streams are append-only
+          document: {
+            "@timestamp": log.timestamp ?? new Date().toISOString(), // required by data streams
+            ...log,
+          },
         });
 
         console.log("Stored log:", log.service);

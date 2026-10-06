@@ -2,11 +2,12 @@ import OpenAI from 'openai';
 import { AiErrorAnalysis } from './ai.types';
 import { buildErrorPrompt } from './ai.prompt';
 import { LogDocument } from '../ingestion/ingestion.types';
+import { env } from '../config/env';
 
 // const client = new OpenAI({
 //     apiKey: process.env.OPENAI_API_KEY!,
 // });
-const USE_MOCK_AI = process.env.USE_MOCK_AI === 'true';
+const USE_MOCK_AI = env.useMockAi;
 
 let client: OpenAI | null = null;
 

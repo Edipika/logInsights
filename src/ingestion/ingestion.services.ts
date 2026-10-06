@@ -53,7 +53,7 @@ export async function searchLogs(data: SearchLogDTO) {
     if (from || to) {
         filter.push({
             range: {
-                timestamp: {
+                "@timestamp": {
                     gte: from,
                     lte: to
                 }
@@ -71,7 +71,7 @@ export async function searchLogs(data: SearchLogDTO) {
             bool: { must, filter } //bool is a Boolean query container means:all conditions must match
         },
         sort: [
-            { timestamp: "desc" }
+            { "@timestamp": "desc" }
         ]
     });
 
@@ -95,7 +95,7 @@ export async function fetchSimilarErrors(
                 ],
             },
         },
-        sort: [{ timestamp: 'desc' }],
+        sort: [{ '@timestamp': 'desc' }],
     });
 
     return hits.hits.map((hit: any) => hit._source);

@@ -1,8 +1,9 @@
+import { env } from "./config/env"; // first, so .env is loaded before other modules read it
 import app from "./app";
 import { logProducer } from "./messaging/producers/log.producers";
 import { startLogConsumer } from "./messaging/consumers/log.consumers";
 
-const PORT = 3000;
+const PORT = env.port;
 
 async function bootstrap() {
   try {

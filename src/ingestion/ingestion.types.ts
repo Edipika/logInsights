@@ -56,5 +56,6 @@ export interface LogDocument {
     topic: string;
     partition: number;
     offset: string;
+    consumer: string; // hostname-pid of the consumer that processed it
   };
 }

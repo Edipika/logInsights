@@ -1,3 +1,4 @@
+import { hostname } from "os";
 import { kafka } from "../../config/kafka";
 import { esClient } from "../../config/elasticsearch";
 import { fetchSimilarErrors, storeAiAnalysis } from '../../ingestion/ingestion.services';
@@ -23,6 +24,9 @@ function getMinuteBucket(timestamp: string | number | Date) {
 
 // If you scale up to 2 consumers in the same group, Kafka will reassign partitions so that each consumer gets a subset. For example, Consumer A might get Partitions 0 and 1, while Consumer B gets Partition 2. Now each consumer only processes a portion of the messages.
 
+// Identifies this consumer instance (one per running process), stored on each log for tracing
+const CONSUMER_ID = `${hostname()}-${process.pid}`;
+
 const consumer = kafka.consumer({
   groupId: env.kafka.groupId,
   sessionTimeout: 30000,
@@ -39,7 +43,7 @@ export async function startLogConsumer() {
   const ALERT_COOLDOWN_MS = 5 * 60 * 1000;
 
   await consumer.run({
-    eachMessage: async ({ message }) => {
+    eachMessage: async ({ topic, partition, message }) => {
       if (!message.value) return;
 
       let log;
@@ -57,10 +61,13 @@ export async function startLogConsumer() {
           document: {
             "@timestamp": log.timestamp ?? new Date().toISOString(), // required by data streams
             ...log,
+            kafka: { topic, partition, offset: message.offset, consumer: CONSUMER_ID }, // where this log came from
           },
         });
 
-        console.log("Stored log:", log.service);
+        console.log(
+          `[CONSUMED] consumer=${CONSUMER_ID} partition=${partition} offset=${message.offset} project=${log.project} service=${log.service}`
+        );
       } catch (err) {
         console.error("ElasticSearch indexing failed", err);
         // future: send to DLQ topic

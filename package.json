@@ -8,13 +8,16 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "es:create": "ts-node src/elastic/createIndices.ts",
-    "es:delete": "ts-node src/elastic/deleteIndices.ts"
+    "es:delete": "ts-node src/elastic/deleteIndices.ts",
+    "logs:bulk": "ts-node src/scripts/sendBulkLogs.ts",
+    "logs:verify": "ts-node src/scripts/verifyPartitions.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/express": "^5.0.6",
+    "@types/node": "^20.19.43",
     "nodemon": "^3.1.11",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"

@@ -16,7 +16,15 @@
         "service": { "type": "keyword" },
         "level": { "type": "keyword" },
         "message": { "type": "text" },
-        "userId": { "type": "keyword" }
+        "userId": { "type": "keyword" },
+        "kafka": {
+          "properties": {
+            "topic": { "type": "keyword" },
+            "partition": { "type": "integer" },
+            "offset": { "type": "long" },
+            "consumer": { "type": "keyword" }
+          }
+        }
       }
     }
   }
